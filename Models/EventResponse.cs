@@ -4,10 +4,10 @@ namespace EventGateway.Models;
 
 public sealed class EventResponse
 {
-    [JsonPropertyName("eventld")]
+    [JsonPropertyName("eventId")]
     public string EventId { get; set; } = string.Empty;
 
-    [JsonPropertyName("accountld")]
+    [JsonPropertyName("accountId")]
     public string AccountId { get; set; } = string.Empty;
 
     [JsonPropertyName("type")]

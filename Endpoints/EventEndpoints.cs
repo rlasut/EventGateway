@@ -3,6 +3,7 @@ using EventGateway.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace EventGateway.Endpoints;
@@ -56,7 +57,7 @@ public static class EventEndpoints
         .WithName("ListEvents")
         .Produces<List<EventResponse>>(StatusCodes.Status200OK);
 
-        app.MapPost("/events", async Task<Results<Created<EventResponse>, Conflict<DuplicateEventResponse>, BadRequest<ApiErrorResponse>>> (CreateEventRequest request, EventLedgerDbContext db) =>
+        app.MapPost("/events", async Task<IResult> (CreateEventRequest request, EventLedgerDbContext db, IHttpClientFactory httpClientFactory) =>
         {
             var validationResults = new List<ValidationResult>();
             Validator.TryValidateObject(request, new ValidationContext(request), validationResults, true);
@@ -109,27 +110,30 @@ public static class EventEndpoints
                 MetadataJson = metadataJson
             };
 
-            db.Events.Add(eventEntity);
-
-            var balance = await db.AccountBalances
-                .FirstOrDefaultAsync(a => a.AccountId == accountId);
-
-            if (balance is null)
+            var accountServiceClient = httpClientFactory.CreateClient("AccountService");
+            var accountServiceRequest = new
             {
-                balance = new AccountBalanceEntity
-                {
-                    Id = Guid.NewGuid(),
-                    AccountId = accountId,
-                    Balance = 0m
-                };
+                eventId = eventEntity.EventId,
+                accountId = accountId,
+                type = normalizedType,
+                amount = request.Amount,
+                currency = currency,
+                eventTimestamp = request.EventTimestamp,
+                metadata = request.Metadata
+            };
 
-                db.AccountBalances.Add(balance);
+            var accountResponse = await accountServiceClient.PostAsJsonAsync($"/accounts/{accountId}/transactions", accountServiceRequest);
+            if (!accountResponse.IsSuccessStatusCode)
+            {
+                var friendlyError = await accountResponse.Content.ReadFromJsonAsync<ApiErrorResponse>();
+                return Results.Json(new ApiErrorResponse
+                {
+                    Message = friendlyError?.Message ?? "The account service could not process this event right now.",
+                    Errors = friendlyError?.Errors
+                }, statusCode: StatusCodes.Status502BadGateway);
             }
 
-            balance.Balance += string.Equals(normalizedType, "CREDIT", StringComparison.OrdinalIgnoreCase)
-                ? eventEntity.Amount
-                : -eventEntity.Amount;
-
+            db.Events.Add(eventEntity);
             await db.SaveChangesAsync();
 
             var response = MapToResponse(eventEntity);

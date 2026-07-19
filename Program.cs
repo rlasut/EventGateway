@@ -9,6 +9,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EventLedgerDbContext>(options =>
     options.UseInMemoryDatabase("EventLedgerDb"));
 
+builder.Services.AddHttpClient("AccountService", client =>
+{
+    var baseUrl = builder.Configuration["AccountService:BaseUrl"];
+    if (string.IsNullOrWhiteSpace(baseUrl))
+    {
+        baseUrl = "http://localhost:5070";
+    }
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

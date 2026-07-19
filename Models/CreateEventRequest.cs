@@ -5,10 +5,10 @@ namespace EventGateway.Models;
 
 public sealed class CreateEventRequest : IValidatableObject
 {
-    [JsonPropertyName("eventld")]
+    [JsonPropertyName("eventId")]
     public string EventId { get; set; } = string.Empty;
 
-    [JsonPropertyName("accountld")]
+    [JsonPropertyName("accountId")]
     public string AccountId { get; set; } = string.Empty;
 
     [JsonPropertyName("type")]
@@ -30,12 +30,12 @@ public sealed class CreateEventRequest : IValidatableObject
     {
         if (string.IsNullOrWhiteSpace(EventId))
         {
-            yield return new ValidationResult("eventld is required.", new[] { nameof(EventId) });
+            yield return new ValidationResult("eventId is required.", new[] { nameof(EventId) });
         }
 
         if (string.IsNullOrWhiteSpace(AccountId))
         {
-            yield return new ValidationResult("accountld is required.", new[] { nameof(AccountId) });
+            yield return new ValidationResult("accountId is required.", new[] { nameof(AccountId) });
         }
 
         if (string.IsNullOrWhiteSpace(Type))

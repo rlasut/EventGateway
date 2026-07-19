@@ -1,0 +1,34 @@
+@EventGateway_HostAddress = http://localhost:5066
+
+POST {{EventGateway_HostAddress}}/events
+Content-Type: application/json
+
+{
+  "eventld": "evt-001",
+  "accountld": "acct-123",
+  "type": "CREDIT",
+  "amount": 150.00,
+  "currency": "USD",
+  "eventTimestamp": "2026-05-15T14:02:11Z",
+  "metadata": {
+    "source": "mainframe-batch",
+    "batchId": "B-9042"
+  }
+}
+
+###
+
+GET {{EventGateway_HostAddress}}/events/evt-001
+Accept: application/json
+
+###
+
+GET {{EventGateway_HostAddress}}/events?account=acct-123
+Accept: application/json
+
+###
+
+GET {{EventGateway_HostAddress}}/health
+Accept: application/json
+
+###

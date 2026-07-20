@@ -57,7 +57,7 @@ public static class EventEndpoints
         .WithName("ListEvents")
         .Produces<List<EventResponse>>(StatusCodes.Status200OK);
 
-        app.MapPost("/events", async Task<IResult> (CreateEventRequest request, EventLedgerDbContext db, IHttpClientFactory httpClientFactory) =>
+        app.MapPost("/events", async Task<IResult> (CreateEventRequest request, EventLedgerDbContext db, IHttpClientFactory httpClientFactory, HttpContext httpContext) =>
         {
             var validationResults = new List<ValidationResult>();
             Validator.TryValidateObject(request, new ValidationContext(request), validationResults, true);
@@ -111,6 +111,14 @@ public static class EventEndpoints
             };
 
             var accountServiceClient = httpClientFactory.CreateClient("AccountService");
+
+            // Forward the TraceId to AccountService
+            var traceId = httpContext.TraceIdentifier;
+            if (!string.IsNullOrWhiteSpace(traceId))
+            {
+                accountServiceClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Trace-Id", traceId);
+            }
+
             var accountServiceRequest = new
             {
                 eventId = eventEntity.EventId,

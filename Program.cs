@@ -24,6 +24,16 @@ builder.Services.AddHttpClient("AccountService", client =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 var logPath = Path.Combine(AppContext.BaseDirectory, "Event.log");
@@ -57,6 +67,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseCors();
+
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
     exceptionHandlerApp.Run(async context =>
@@ -81,8 +93,6 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         await context.Response.WriteAsJsonAsync(error);
     });
 });
-
-app.UseHttpsRedirection();
 
 app.MapEventEndpoints();
 
